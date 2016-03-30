@@ -27,10 +27,10 @@ command :build do |c|
   c.syntax = './translations build [api-key]'
   c.description = 'Build the translation files.'
   c.action do |args, options|
-    if args.length != 1
-      say 'Please specify your API key.'
+    key = (args.size > 0 ? args[0] : nil) || ENV['API_KEY']
+    if key.nil?
+      say 'Please provide an API key.'
     else
-      key = args[0]
       say 'Exporting new translations...'
       open(export_url(key)).read
 
