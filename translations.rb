@@ -5,19 +5,23 @@ require 'commander/import'
 require 'open-uri'
 require 'zip'
 
-PROJECT_ID = 'atlas-game-manager'
+@project_id = 'atlas-game-manager'
+@langs = {
+    'en' => 'en',
+    'de' => 'de',
+    'es-ES' => 'es',
+    'en-PT' => 'en_PT',
+    'sv-SE' => 'sv'
+}
+@files = {
+    'atlas.xml' => 'target/atlas/%s.xml',
+    'docs.yml' => 'target/docs/%s.yml',
+}
+
 
 program :name, './translations'
 program :version, '0.0.1'
 program :description, 'Builds translations from translate.avicus.net into proper folders.'
-
-command :list do |c|
-  c.syntax = './translations list [api-key]'
-  c.description = 'View the translation files.'
-  c.action do |args, options|
-    # Do something or c.when_called Avicus translations::Commands::List
-  end
-end
 
 command :build do |c|
   c.syntax = './translations build [api-key]'
@@ -30,10 +34,25 @@ command :build do |c|
       say 'Exporting new translations...'
       open(export_url(key)).read
 
-      open('all.zip', 'wb') do |file|
+      say 'Downloading translations...'
+      FileUtils.mkpath('target')
+      open('target/all.zip', 'wb') do |file|
         file << open(download_url(key)).read
       end
-      extract('all.zip')
+      extract('target/all.zip')
+
+      @langs.each do |lang, rename|
+        @files.each do |file, format|
+          target = format % rename
+          say target
+
+          dir = File.expand_path('..', target)
+          FileUtils.mkdir_p(dir)
+
+          say File.join(lang, file) + "->" + dir
+          FileUtils.cp(File.join('target', 'all', lang, file), target)
+        end
+      end
     end
     # Do something or c.when_called Avicus translations::Commands::Build
   end
@@ -54,9 +73,9 @@ end
 
 
 def export_url(key)
-  "https://api.crowdin.com/api/project/#{PROJECT_ID}/export?key=#{key}"
+  "https://api.crowdin.com/api/project/#{@project_id}/export?key=#{key}"
 end
 
 def download_url(key, lang = 'all')
-  "https://api.crowdin.com/api/project/#{PROJECT_ID}/download/#{lang}.zip?key=#{key}"
+  "https://api.crowdin.com/api/project/#{@project_id}/download/#{lang}.zip?key=#{key}"
 end
